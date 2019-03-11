@@ -28,7 +28,7 @@ class Tokenizer:
 
         if token == '':
             self.actual = Token.Token(self.origin[index])
-            self.position = index +1
+            self.position = index + 1
         else:
             self.actual = Token.Token(token)
             self.position = index
