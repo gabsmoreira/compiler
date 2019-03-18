@@ -4,12 +4,10 @@ class PrePro:
         nice = []
         while index < len(code):
             if code[index] == "'":
-                break
-            else:
-                if code[index] == ' ':
+                while code[index] != '\\' and index < len(code):
                     index +=1
-                    continue
-                else:
-                    nice.append(code[index])
+                index+=1
+            else:
+                nice.append(code[index])
             index +=1
         return nice

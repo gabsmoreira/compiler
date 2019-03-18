@@ -3,28 +3,17 @@ import Tokenizer
 
 class Parser:
     def parse_term():
-        result = 0
-        if Parser.tokens.actual.type == 'int':
-            result += int(Parser.tokens.actual.value)
-            Parser.tokens.select_next()
-            while Parser.tokens.actual.value in ['*', '/']:
-                if Parser.tokens.actual.value == '*':
-                    Parser.tokens.select_next()
-                    if Parser.tokens.actual.type == 'int':
-                        result *= int(Parser.tokens.actual.value)
-                    else:
-                        raise Exception(f"Expected int type after operation, instead got {Parser.tokens.actual.type} ({Parser.tokens.actual.value})")
-                elif Parser.tokens.actual.value == '/':
-                    Parser.tokens.select_next()
-                    if Parser.tokens.actual.type == 'int':
-                        result //= int(Parser.tokens.actual.value)
-                    else:
-                        raise Exception(f"Expected int type after operation, instead got {Parser.tokens.actual.type} ({Parser.tokens.actual.value})")
-                else:
-                    raise Exception(f"Expected * or / operation, instead got {Parser.tokens.actual.type} ({Parser.tokens.actual.value})")
+        result = Parser.parse_factor()
+        while Parser.tokens.actual.value in ['*', '/']:
+            if Parser.tokens.actual.value == '*':
                 Parser.tokens.select_next()
-        else:
-            raise Exception(f"Expected int type, instead got {Parser.tokens.actual.type} ({Parser.tokens.actual.value})")
+                new_term = Parser.parse_factor()
+                result *= int(new_term)
+
+            elif Parser.tokens.actual.value == '/':
+                Parser.tokens.select_next()
+                new_term = Parser.parse_factor()
+                result //= int(new_term)
         return result
     
     def parse_expression():
@@ -40,7 +29,36 @@ class Parser:
                 new_term = Parser.parse_term()
                 result -= int(new_term)
         return result
+    
+    def parse_factor():
+        result = 0
+        if Parser.tokens.actual.type == 'int':
+            result = int(Parser.tokens.actual.value)
+            Parser.tokens.select_next()
+            
 
+        elif Parser.tokens.actual.value == '(':
+            Parser.tokens.select_next()
+            new_term = Parser.parse_expression()
+            result = int(new_term)
+            if Parser.tokens.actual.value != ')':
+                raise Exception(f"Invalid token in column {Parser.tokens.position}")
+            else:
+                Parser.tokens.select_next()
+
+        elif Parser.tokens.actual.value in ['+', '-']:
+            if Parser.tokens.actual.value == '-':
+                Parser.tokens.select_next()
+                new_term = Parser.parse_factor()
+                result = -int(new_term)
+            
+            elif Parser.tokens.actual.value == '+':
+                Parser.tokens.select_next()
+                new_term = Parser.parse_factor()
+                result = int(new_term)
+        else:
+            raise Exception(f"Unexpected token in column {Parser.tokens.position}")
+        return result
 
     def run(code):
         Parser.tokens = Tokenizer.Tokenizer(code)
@@ -48,6 +66,6 @@ class Parser:
         r = Parser.parse_expression()
         if Parser.tokens.actual.value == 'EOF':
             return r
-            # raise Exception(f'Expected EOF instead got {Parser.tokens.actual.value}')
         else:
-            return r
+            raise Exception(f'Expected EOF instead got {Parser.tokens.actual.value}')
+            # return r

@@ -9,13 +9,10 @@ lines = input()
 #     lines = []
 #     for i, line in enumerate(file.readlines()):
 #         lines.append(line.decode('utf-8'))
-
-
 # lines = lines[0]
+
+
 lines = PrePro.filter(lines)
 # print(lines)
-
 a = Parser.run(lines)
 print(a)
-
-
