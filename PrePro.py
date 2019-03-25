@@ -2,6 +2,7 @@ class PrePro:
     def filter(code):
         index = 0
         nice = []
+        print(code)
         while index < len(code):
             if code[index] == "'":
                 while code[index] != '\\' and index < len(code):

@@ -8,16 +8,12 @@ class Parser:
             if Parser.tokens.actual.value == '*':
                 Parser.tokens.select_next()
                 new_term = Parser.parse_factor()
-                # result *= int(new_term)
                 result = BinOp('*', [result, new_term])
-                # return result
 
             elif Parser.tokens.actual.value == '/':
                 Parser.tokens.select_next()
                 new_term = Parser.parse_factor()
-                # result //= int(new_term)
                 result = BinOp('/', [result, new_term])
-                # return result
         return result
     
     def parse_expression():
@@ -27,15 +23,11 @@ class Parser:
                 Parser.tokens.select_next()
                 new_term = Parser.parse_term()
                 result = BinOp('+', [result, new_term])
-                # result += int(new_term)
-                # return result
 
             elif Parser.tokens.actual.value == '-':
                 Parser.tokens.select_next()
                 new_term = Parser.parse_term()
                 result = BinOp('-', [result, new_term])
-                # result += int(new_term)
-                # return result
         return result
     
     def parse_factor():
@@ -61,14 +53,12 @@ class Parser:
                 Parser.tokens.select_next()
                 new_term = Parser.parse_factor()
                 un_op = UnOp('-', new_term)
-                # result = -int(new_term)
                 return un_op
             
             elif Parser.tokens.actual.value == '+':
                 Parser.tokens.select_next()
                 new_term = Parser.parse_factor()
                 un_op = UnOp('+', new_term)
-                # result = int(new_term)
                 return un_op
         else:
             raise Exception(f"Unexpected token in column {Parser.tokens.position}")
