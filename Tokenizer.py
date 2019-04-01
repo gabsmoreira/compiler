@@ -1,6 +1,6 @@
 import Token
 
-
+RESERVED = ['PRINT', 'BEGIN', 'END']
 
 class Tokenizer:
 
@@ -25,6 +25,16 @@ class Tokenizer:
             if(index == len(self.origin)):
                 self.actual = Token.Token('EOF')
                 break
+
+        if self.origin[index].isalpha():
+            token = ''
+            while index < len(self.origin) and (self.origin[index].isdigit()  or self.origin[index].isalpha() or self.origin[index] == '_'):
+                token+= str(self.origin[index])
+                index +=1
+
+            if index < len(self.origin):
+                self.actual = Token.Token(self.origin[index])
+                self.position = index
 
         if token == '':
             self.actual = Token.Token(self.origin[index])

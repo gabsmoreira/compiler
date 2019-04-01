@@ -1,16 +1,14 @@
 import Tokenizer
 from Parser import Parser
 from PrePro import PrePro
+from SymbolTable import SymbolTable
 
 
-# lines = input()
-file_path = 'program.txt'
+file_path = 'program.vbs'
 with open(file_path, 'rb') as file:
-    for line in file.readlines():
-        # lines.append(line.decode('utf-8'))
-        readable_line = line.decode('utf-8')
-        prepro = PrePro.filter(readable_line)
-        # print(lines)
-        a = Parser.run(prepro)
-        print(a.evaluate())
-        
+    content = file.read().decode('utf-8')
+    prepro = PrePro.filter(content)
+    print(prepro)
+    symbol_table = SymbolTable()
+    a = Parser.run(prepro)
+    a.evaluate(symbol_table)

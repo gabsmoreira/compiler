@@ -2,6 +2,51 @@ import Tokenizer
 from Node import *
 
 class Parser:
+
+    def parse_statements():
+        if Parser.tokens.actual.type == 'BEGIN':
+            Parser.tokens.select_next()
+            if Parser.tokens.actual.type == 'BL':
+                children = []
+                Parser.tokens.select_next()
+                while Parser.tokens.actual.type != 'END':
+                    new_child = Parser.parse_statement()
+                    children.append(new_child)
+                    if Parser.tokens.actual.type == 'BL':
+                        Parser.tokens.select_next()
+                    else:
+                        raise Exception(f'Expected break line in column {Parser.tokens.position}')
+                if Parser.tokens.actual.type == 'END':
+                    Parser.tokens.select_next()
+                    return Statements('X', children)
+                else:
+                    raise Exception(f'Expected END in column {Parser.tokens.position}')
+                    
+            else:
+                raise Exception(f'Expected break line in column {Parser.tokens.position}')
+        else:
+            raise Exception(f'Missing Begin in column {Parser.tokens.position}')
+
+    def parse_statement():
+        if Parser.tokens.actual.type == 'VAR':
+            var = Id(Parser.tokens.actual.value, [])
+            Parser.tokens.select_next()
+            if Parser.tokens.actual.type == 'EQUAL':
+                Parser.tokens.select_next()
+                new_value = Parser.parse_expression()
+                assigment = Assigment("=", [var, new_value])
+                return assigment
+            else:
+                raise Exception(f'Unexpected token in column {Parser.tokens.position}')
+        elif Parser.tokens.actual.type == 'PRINT':
+            Parser.tokens.select_next()
+            value = Parser.parse_expression()
+            print_value = Print('PRINT',value)
+            return print_value
+        else:
+            return Parser.parse_statements()
+
+
     def parse_term():
         result = Parser.parse_factor()
         while Parser.tokens.actual.value in ['*', '/']:
@@ -32,17 +77,21 @@ class Parser:
     
     def parse_factor():
         result = 0
-        if Parser.tokens.actual.type == 'int':
+        if Parser.tokens.actual.type == 'INT':
             result = int(Parser.tokens.actual.value)
-            int_val = IntVal(int(Parser.tokens.actual.value))
+            int_val = IntVal(int(Parser.tokens.actual.value), [])
             Parser.tokens.select_next()
             return int_val
             
+        elif Parser.tokens.actual.type == 'VAR':
+            identifier = Id(Parser.tokens.actual.value, [])
+            Parser.tokens.select_next()
+            return identifier
 
         elif Parser.tokens.actual.value == '(':
             Parser.tokens.select_next()
             new_term = Parser.parse_expression()
-            result = int(new_term)
+            result = new_term
             if Parser.tokens.actual.value != ')':
                 raise Exception(f"Invalid token in column {Parser.tokens.position}")
             else:
@@ -67,7 +116,7 @@ class Parser:
     def run(code):
         Parser.tokens = Tokenizer.Tokenizer(code)
         Parser.tokens.select_next()
-        r = Parser.parse_expression()
+        r = Parser.parse_statements()
         if Parser.tokens.actual.value == 'EOF':
             return r
         else:
