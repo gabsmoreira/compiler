@@ -4,29 +4,28 @@ from Node import *
 class Parser:
 
     def parse_statements():
-        if Parser.tokens.actual.type == 'BEGIN':
-            Parser.tokens.select_next()
-            if Parser.tokens.actual.type == 'BL':
-                children = []
-                Parser.tokens.select_next()
-                while Parser.tokens.actual.type != 'END':
-                    new_child = Parser.parse_statement()
-                    children.append(new_child)
-                    if Parser.tokens.actual.type == 'BL':
-                        Parser.tokens.select_next()
-                    else:
-                        raise Exception(f'Expected break line in column {Parser.tokens.position}')
-                if Parser.tokens.actual.type == 'END':
-                    Parser.tokens.select_next()
-                    return Statements('X', children)
-                else:
-                    raise Exception(f'Expected END in column {Parser.tokens.position}')
-                    
-            else:
-                raise Exception(f'Expected break line in column {Parser.tokens.position}')
-        else:
+        if Parser.tokens.actual.type != 'BEGIN':
             raise Exception(f'Missing Begin in column {Parser.tokens.position}')
 
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'BL':
+            raise Exception(f'Expected break line in column {Parser.tokens.position}')
+
+        Parser.tokens.select_next()
+        children = []
+
+        while Parser.tokens.actual.type != 'END':
+            new_child = Parser.parse_statement()
+            children.append(new_child)
+            if Parser.tokens.actual.type == 'BL':
+                Parser.tokens.select_next()
+            else:
+                raise Exception(f'Expected break line in column {Parser.tokens.position}')
+
+        Parser.tokens.select_next()
+        return Statements('X', children) 
+      
     def parse_statement():
         if Parser.tokens.actual.type == 'VAR':
             var = Id(Parser.tokens.actual.value, [])
@@ -43,8 +42,11 @@ class Parser:
             value = Parser.parse_expression()
             print_value = Print('PRINT',value)
             return print_value
-        else:
+
+        elif Parser.tokens.actual.type == 'BEGIN':
             return Parser.parse_statements()
+        else:
+            return NoOp()
 
 
     def parse_term():
@@ -120,5 +122,5 @@ class Parser:
         if Parser.tokens.actual.value == 'EOF':
             return r
         else:
-            raise Exception(f'Expected EOF instead got {Parser.tokens.actual.value}')
-            # return r
+            # raise Exception(f'Expected EOF instead got {Parser.tokens.actual.value}')
+            return r

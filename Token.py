@@ -1,4 +1,4 @@
-RESERVED = ['PRINT', 'BEGIN', 'END', 'PRINT']
+RESERVED = ['PRINT', 'BEGIN', 'END']
 
 class Token:
     def __init__(self, token):
@@ -20,7 +20,17 @@ class Token:
             return 'VAR'
         elif token == '=':
             return 'EQUAL'
-        else:
+        elif token == '\n':
             return 'BL'
+        elif token == '(':
+            return 'OPENPAR'
+        elif token == ')':
+            return 'CLOSEPAR'
+        elif token == '<':
+            return 'SMALLER'
+        elif token == '>':
+            return 'BIGGER'
+        else:
+            return 'NONE'
 
 

@@ -7,7 +7,7 @@ class Tokenizer:
     def __init__(self, origin):
         self.origin = origin
         self.position = 0
-        self.actual = Token.Token(self.origin[self.position])
+        self.actual = None
         self.OPS = ['+','-', '*', '/']
     
     def select_next(self):

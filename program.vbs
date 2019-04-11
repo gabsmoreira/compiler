@@ -1,7 +1,8 @@
 Begin
-y = 7
-'comment
-x = (3 + 2)/5
-'bla
-print x
-End
+    Begin
+
+        ' x = -(2  +  3)/5
+        y = 1 + 5
+        print y
+    end
+end

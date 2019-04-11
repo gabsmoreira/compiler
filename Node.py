@@ -39,7 +39,7 @@ class IntVal(Node):
 class NoOp(Node):
     def __init__(self):
         pass
-    def evaluate(self):
+    def evaluate(self, symbol_table):
         return
 
 class Id(Node):
