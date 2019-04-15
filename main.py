@@ -13,6 +13,19 @@ with open(file_name, 'rb') as file:
     content = file.read().decode('utf-8')
     prepro = PrePro.filter(content)
     tokens = Tokenizer.Tokenizer(prepro)
+    # tokens.select_next()
+    # for i in range(100):
+    #     print(tokens.actual.type)
+    #     tokens.select_next()
     symbol_table = SymbolTable()
     a = Parser.run(prepro)
     a.evaluate(symbol_table)
+
+
+def nodes (n):
+    if n != None:
+        for child in n.children:
+            nodes(child)
+            print(child.value)
+
+# nodes(a)

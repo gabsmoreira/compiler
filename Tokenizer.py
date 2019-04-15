@@ -9,6 +9,7 @@ class Tokenizer:
         self.position = 0
         self.actual = None
         self.OPS = ['+','-', '*', '/']
+        self.line = 1
     
     def select_next(self):
         index = self.position

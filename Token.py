@@ -1,9 +1,9 @@
-RESERVED = ['PRINT', 'BEGIN', 'END']
+RESERVED = ['PRINT', 'BEGIN', 'END', 'WHILE', 'IF', 'WEND', 'THEN', 'ELSE', 'INPUT']
 
 class Token:
     def __init__(self, token):
         self.OPS = ['+', '-', '/', '*']
-        self.TOKEN_TYPES = ['OP', 'INT', 'VAR', 'PRINT']
+        # self.TOKEN_TYPES = ['OP', 'INT', 'VAR', 'PRINT']
         self.value = token
         self.type = self.define_type(token)
 
