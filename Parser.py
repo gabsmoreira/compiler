@@ -3,17 +3,62 @@ from Node import *
 
 class Parser:
 
-    def parse_statements():
-        children = []
-        while Parser.tokens.actual.type != 'END' and Parser.tokens.actual.type != 'WEND' and Parser.tokens.actual.type != 'EOF' and Parser.tokens.actual.type != 'ELSE':
-            new_child = Parser.parse_statement()
-            children.append(new_child)
+    def parse_program():
+        if Parser.tokens.actual.type != 'SUB':
+            raise Exception(f'Expected SUB in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'MAIN':
+            raise Exception(f'Expected MAIN in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'OPENPAR':
+            raise Exception(f'Expected ( in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'CLOSEPAR':
+            raise Exception(f'Expected ) in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'BL':
+            raise Exception(f'Expected break line in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.line +=1
+        Parser.tokens.select_next()
+
+        statements = []
+        while Parser.tokens.actual.type != 'END':
+            statement = Parser.parse_statement()
+            statements.append(statement)
             if Parser.tokens.actual.type == 'BL':
                 Parser.tokens.line +=1
                 Parser.tokens.select_next()
             else:
                 raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
-        return Statements('X', children) 
+        
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'SUB':
+            raise Exception(f'Expected SUB in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+        return Statements('X', statements) 
+
+
+    def parse_type():
+        if Parser.tokens.actual.type in ['INTEGER', 'BOOLEAN']:
+            if Parser.tokens.actual.type == 'INTEGER':
+                ret_val = Type('INT', [])
+                Parser.tokens.select_next()
+                return ret_val
+            ret_val = Type(Parser.tokens.actual.value, [])
+            Parser.tokens.select_next()
+            return ret_val
       
     def parse_statement():
         if Parser.tokens.actual.type == 'VAR':
@@ -21,14 +66,14 @@ class Parser:
             Parser.tokens.select_next()
             if Parser.tokens.actual.type == 'EQUAL':
                 Parser.tokens.select_next()
-                new_value = Parser.parse_expression()
+                new_value = Parser.parse_rel_expression()
                 return Assigment("=", [var, new_value])
             else:
                 raise Exception(f'Unexpected token got {Parser.tokens.actual.value}')
         
         elif Parser.tokens.actual.type == 'PRINT':
             Parser.tokens.select_next()
-            value = Parser.parse_expression()
+            value = Parser.parse_rel_expression()
             return Print('PRINT',[value])
 
         elif Parser.tokens.actual.type == 'WHILE':
@@ -38,39 +83,81 @@ class Parser:
                 raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
             Parser.tokens.line +=1
             Parser.tokens.select_next()
-            statements = Parser.parse_statements()
+            children = []
+            while Parser.tokens.actual.type !='WEND':
+                statement = Parser.parse_statement()
+                children.append(statement)
+                if Parser.tokens.actual.type == 'BL':
+                    Parser.tokens.line +=1
+                    Parser.tokens.select_next()
+                else:
+                    raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
 
-            if Parser.tokens.actual.type != 'WEND':
-                raise Exception(f'Expected Wend, instead got {Parser.tokens.actual.value}')
             Parser.tokens.select_next()
-            if Parser.tokens.actual.type != 'BL':
-                raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
-            Parser.tokens.line +=1
-            return While('while', [rel_expression, statements])
+            
+            return While('while', [rel_expression, Statements('statements', children)])
+
+        elif Parser.tokens.actual.type == 'DIM':
+            Parser.tokens.select_next()
+            var_id = Id(Parser.tokens.actual.value, [])
+            Parser.tokens.select_next()
+            if Parser.tokens.actual.type != 'AS':
+                raise Exception(f'Expected AS after variable declaration {var_id.value} in line {Parser.tokens.line}')
+            
+            Parser.tokens.select_next()
+            var_type = Parser.parse_type()
+            return VarDec('value', [var_id, var_type])
+
         
         elif Parser.tokens.actual.type == 'IF':
-            children = []
+            children_if = []
             Parser.tokens.select_next()
             rel_expression = Parser.parse_rel_expression()
-            children.append(rel_expression)
+            children_if.append(rel_expression)
             if Parser.tokens.actual.type != 'THEN':
                 raise Exception(f'Expected THEN inside IF, instead got {Parser.tokens.actual.value}')
             Parser.tokens.select_next()
             if Parser.tokens.actual.type != 'BL':
                 raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
+
             Parser.tokens.line +=1
             Parser.tokens.select_next()
-            statements = Parser.parse_statements()
-            children.append(statements)
+
+            children_statements = []
+            while Parser.tokens.actual.type not in ['ELSE', 'END']:
+                statement = Parser.parse_statement()
+                children_statements.append(statement)
+                if Parser.tokens.actual.type == 'BL':
+                    Parser.tokens.line +=1
+                    Parser.tokens.select_next()
+                else:
+                    raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
+
+            children_if.append(Statements('statements', children_statements))
+
+
 
             if Parser.tokens.actual.type == 'ELSE':
                 Parser.tokens.select_next()
                 if Parser.tokens.actual.type != 'BL':
                     raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
+
                 Parser.tokens.line +=1
                 Parser.tokens.select_next()
-                else_statements = Parser.parse_statements()
-                children.append(else_statements)
+                children_else = []
+
+                while Parser.tokens.actual.type != 'END':
+                    statement = Parser.parse_statement()
+                    children_else.append(statement)
+                    if Parser.tokens.actual.type == 'BL':
+                        Parser.tokens.line +=1
+                        Parser.tokens.select_next()
+                    else:
+                        raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
+
+                children_if.append(Statements('statements', children_else))
+
+            
             if Parser.tokens.actual.type != 'END':
                 raise Exception(f'Expected END, instead got {Parser.tokens.actual.value}') 
 
@@ -78,10 +165,8 @@ class Parser:
             if Parser.tokens.actual.type != 'IF':
                 raise Exception(f'Expected IF after END, instead got {Parser.tokens.actual.value}')
             Parser.tokens.select_next()
-            if Parser.tokens.actual.type != 'BL':
-                raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
-            Parser.tokens.line +=1
-            return If('if', children)
+
+            return If('if', children_if)
             
         else:
             return NoOp('x', [])
@@ -116,6 +201,7 @@ class Parser:
             Parser.tokens.select_next()
             new_term = Parser.parse_expression()
             result = BinOp('>', [result, new_term])
+        
         return result
 
     def parse_expression():
@@ -140,6 +226,11 @@ class Parser:
             Parser.tokens.select_next()
             return int_val
             
+        elif Parser.tokens.actual.type in ['TRUE', 'FALSE']:
+            boolean = Boolean(Parser.tokens.actual.value, [])
+            Parser.tokens.select_next()
+            return boolean
+
         elif Parser.tokens.actual.type == 'VAR':
             identifier = Id(Parser.tokens.actual.value, [])
             Parser.tokens.select_next()
@@ -147,7 +238,7 @@ class Parser:
 
         elif Parser.tokens.actual.value == '(':
             Parser.tokens.select_next()
-            new_term = Parser.parse_expression()
+            new_term = Parser.parse_rel_expression()
             result = new_term
             if Parser.tokens.actual.value != ')':
                 raise Exception(f"Invalid token {Parser.tokens.actual.value} in line {Parser.tokens.line}")
@@ -187,7 +278,7 @@ class Parser:
     def run(code):
         Parser.tokens = Tokenizer.Tokenizer(code)
         Parser.tokens.select_next()
-        r = Parser.parse_statements()
+        r = Parser.parse_program()
         if Parser.tokens.actual.value == 'EOF':
             return r
         else:

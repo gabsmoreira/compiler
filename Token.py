@@ -1,4 +1,4 @@
-RESERVED = ['PRINT', 'BEGIN', 'END', 'WHILE', 'IF', 'WEND', 'THEN', 'ELSE', 'INPUT']
+RESERVED = ['PRINT', 'BEGIN', 'END', 'WHILE', 'IF', 'WEND', 'THEN', 'ELSE', 'INPUT', 'DIM','INTEGER', 'BOOLEAN', 'AS', 'SUB', 'MAIN', 'TRUE', 'FALSE']
 
 class Token:
     def __init__(self, token):
