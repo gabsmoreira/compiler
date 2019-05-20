@@ -1,6 +1,14 @@
+from Translator import Translator
+
 class Node:
+    i = 0
     def evaluate():
         pass
+    @staticmethod
+    def get_new_id():
+        Node.i+=1
+        return Node.i
+
 
 class BinOp(Node):
     def __init__(self, value, children):
@@ -8,36 +16,59 @@ class BinOp(Node):
         self.children = children
         self.left = children[0]
         self.right = children[1]
+        self.id = Node.get_new_id()
     def evaluate(self, symbol_table):
         val1, var_type1 = self.left.evaluate(symbol_table)
+        Translator.insert('PUSH EBX; \n')
         val2, var_type2 = self.right.evaluate(symbol_table)
+        Translator.insert('POP EAX; \n')
 
         if var_type1 != var_type2:
             raise Exception(f'Cannot perform {self.value} with {var_type1} and {var_type2}')
 
         if var_type1 == 'INT':
             if self.value == '+':
-                return self.left.evaluate(symbol_table)[0] + self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('ADD EAX, EBX; \n')
+                Translator.insert('MOV EBX, EAX; \n')
+                return val1 + val2, var_type1
             elif self.value == '-':
-                return self.left.evaluate(symbol_table)[0] - self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('SUB EAX, EBX; \n')
+                Translator.insert('MOV EBX, EAX; \n')
+                return val1 - val2, var_type1
             elif self.value == '*':
-                return self.left.evaluate(symbol_table)[0] * self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('IMUL EBX; \n')
+                Translator.insert('MOV EBX, EAX; \n')
+                return val1 * val2, var_type1
             elif self.value == '/':
-                return self.left.evaluate(symbol_table)[0] // self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('IDIV EBX; \n')
+                Translator.insert('MOV EBX, EAX; \n')
+                return val1 //val2, var_type1
             elif self.value == '>':
-                return self.left.evaluate(symbol_table)[0] > self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('CMP EAX, EBX; \n')
+                Translator.insert('CALL binop_jg; \n')
+                return val1 > val2, var_type1
             elif self.value == '<':
-                return self.left.evaluate(symbol_table)[0] < self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('CMP EAX, EBX; \n')
+                Translator.insert('CALL binop_jl; \n')
+                return val1 < val2, var_type1
             elif self.value == '=':
-                return self.left.evaluate(symbol_table)[0] == self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('CMP EAX, EBX; \n')
+                Translator.insert('CALL binop_je; \n')
+                return val1 == val2, var_type1
         
         elif var_type1 == 'BOOLEAN':
             if self.value == 'AND':
-                return self.left.evaluate(symbol_table)[0] and self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('AND EAX, EBX; \n')
+                Translator.insert('MOV EBX, EAX; \n')
+                return val1 and val2, var_type1
             elif self.value == 'OR':
-                return self.left.evaluate(symbol_table)[0] or self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('OR EAX, EBX; \n')
+                Translator.insert('MOV EBX, EAX; \n')
+                return val1 or val2, var_type1
             elif self.value == '=':
-                return self.left.evaluate(symbol_table)[0] == self.right.evaluate(symbol_table)[0], var_type1
+                Translator.insert('CMP EAX, EBX; \n')
+                Translator.insert('CALL binop_je; \n')
+                return val1 == val2, var_type1
         
         else:
             raise Exception(f'Cannot perform {self.value} with {var_type1} and {var_type2}')
@@ -69,7 +100,9 @@ class IntVal(Node):
     def __init__(self, value, children):
         self.value = value
         self.children = children
+        self.id = Node.get_new_id()
     def evaluate(self, symbol_table):
+        Translator.insert(f'MOV EBX, {self.value}; \n')
         return self.value, 'INT'
 
 class NoOp(Node):
@@ -85,6 +118,9 @@ class Id(Node):
         self.value = value
         self.children = children
     def evaluate(self, symbol_table):
+        disp = symbol_table.table[self.value][2]
+        Translator.insert(f'MOV EBX, [EBP {disp}]; \n')
+        
         return symbol_table.get_value(self.value)
         
 class Statements(Node):
@@ -103,10 +139,12 @@ class Assigment(Node):
         self.right = children[1]
         self.children = children
     def evaluate(self, symbol_table):
-        _, var_type = symbol_table.table[self.left.value]
+        _, var_type, displac = symbol_table.table[self.left.value]
         var_value, var_type2 = self.right.evaluate(symbol_table)
         if var_type != var_type2:
             raise Exception(f'Variable type ({var_type}) do not match with expression type ({var_type2})')
+        disp = symbol_table.table[self.left.value][2]
+        Translator.insert(f'MOV [EBP {disp}], EBX; \n')
         symbol_table.set_value(self.left.value, var_value)
         return
 
@@ -116,6 +154,10 @@ class Print(Node):
         self.children = children
     def evaluate(self, symbol_table):
         print(self.children[0].evaluate(symbol_table)[0])
+        Translator.insert('PUSH EBX; \n')
+        Translator.insert('CALL print; \n')
+        Translator.insert('POP EBX; \n')
+        # print(''.join(Translator.code))
         return
 
 class Input(Node):
@@ -130,9 +172,17 @@ class While(Node):
     def __init__(self, value, children):
         self.value = value
         self.children = children
+        self.id = Node.get_new_id()
     def evaluate(self, symbol_table):
-        while self.children[0].evaluate(symbol_table)[0] == True:
-            self.children[1].evaluate(symbol_table)
+        Translator.insert(f'LOOP_{self.id}; \n')
+        self.children[0].evaluate(symbol_table)
+        Translator.insert('CMP EBX, False; \n')
+        Translator.insert(f'JE EXIT_{self.id}; \n')
+        self.children[1].evaluate(symbol_table)
+        Translator.insert(f'JMP LOOP_{self.id}; \n')
+        Translator.insert(f'EXIT_{self.id}; \n')
+        # while self.children[0].evaluate(symbol_table)[0] == True:
+        #     self.children[1].evaluate(symbol_table)
         return
 
 class If(Node):
@@ -156,6 +206,7 @@ class VarDec(Node):
         var_type = self.children[1].evaluate(symbol_table)
         if var_id in symbol_table.table:
             raise Exception(f'Variable {var_id} already exists!')
+        Translator.insert('PUSH DWORD 0; \n')
         symbol_table.alloc(var_id, var_type)
         return
         
@@ -171,4 +222,5 @@ class Boolean(Node):
         self.value = value
         self.children = children
     def evaluate(self, symbol_table):
+        Translator.insert(f'MOV EBX, {self.value.capitalize()}; \n')
         return self.value, 'BOOLEAN'

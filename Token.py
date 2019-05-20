@@ -31,6 +31,6 @@ class Token:
         elif token == '>':
             return 'BIGGER'
         else:
-            return 'NONE'
+            return 'VAR'
 
 

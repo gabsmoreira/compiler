@@ -34,11 +34,11 @@ class Parser:
         while Parser.tokens.actual.type != 'END':
             statement = Parser.parse_statement()
             statements.append(statement)
-            if Parser.tokens.actual.type == 'BL':
-                Parser.tokens.line +=1
-                Parser.tokens.select_next()
-            else:
-                raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
+                # if Parser.tokens.actual.type == 'BL':
+            Parser.tokens.line +=1
+            Parser.tokens.select_next()
+            # else:
+                # raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
         
         Parser.tokens.select_next()
 
@@ -51,12 +51,12 @@ class Parser:
 
 
     def parse_type():
-        if Parser.tokens.actual.type in ['INTEGER', 'BOOLEAN']:
-            if Parser.tokens.actual.type == 'INTEGER':
-                ret_val = Type('INT', [])
-                Parser.tokens.select_next()
-                return ret_val
-            ret_val = Type(Parser.tokens.actual.value, [])
+        if Parser.tokens.actual.type == 'INTEGER':
+            ret_val = Type('INT', [])
+            Parser.tokens.select_next()
+            return ret_val
+        else:
+            ret_val = Type('BOOLEAN', [])
             Parser.tokens.select_next()
             return ret_val
       
