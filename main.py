@@ -22,6 +22,9 @@ with open(file_name, 'rb') as file:
     a.evaluate(symbol_table)
     print(''.join(Translator.code))
 
+with open('program.asm', 'w+') as file:
+    file.write(''.join(Translator.code))
+    
 
 def nodes (n):
     if n != None:
