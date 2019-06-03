@@ -198,6 +198,7 @@ class FunCall(Node):
         dec, dec_type = symbol_table.get_value_recursive(self.value)
         new_symbol_table = SymbolTable(symbol_table)
         begin = 0
+        number_of_args = 0
         if dec_type == 'FUNCTION':
             ret_type = dec.children[0].evaluate(symbol_table)
             new_symbol_table.alloc(self.value, ret_type)
@@ -209,7 +210,10 @@ class FunCall(Node):
             if child_eval_type != arg_type:
                 raise Exception(f'Variable type {arg_type} is not {child_eval_type} !')
             new_symbol_table.set_value(dec.children[i].children[0].value, children_eval)
+            number_of_args +=1
 
+        if number_of_args != len(self.children):
+            raise Exception("Arguments do not match")
         dec.children[len(dec.children)-1].evaluate(new_symbol_table)
 
         if dec_type == 'FUNCTION':
