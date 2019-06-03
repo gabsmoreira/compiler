@@ -146,6 +146,7 @@ class If(Node):
             if len(self.children) == 3:
                 self.children[2].evaluate(symbol_table)
         return
+from SymbolTable import *
 
 class VarDec(Node):
     def __init__(self, value, children):
@@ -172,3 +173,46 @@ class Boolean(Node):
         self.children = children
     def evaluate(self, symbol_table):
         return self.value, 'BOOLEAN'
+
+class FuncDec(Node):
+    def __init__(self, value, children):
+        self.value = value
+        self.children = children
+    def evaluate(self, symbol_table):
+        symbol_table.alloc(self.value, 'FUNCTION')
+        symbol_table.set_value(self.value, self)
+
+class SubDec(Node):
+    def __init__(self, value, children):
+        self.value = value
+        self.children = children
+    def evaluate(self, symbol_table):
+        symbol_table.alloc(self.value, 'SUB')
+        symbol_table.set_value(self.value, self)
+
+class FunCall(Node):
+    def __init__(self, value, children):
+        self.value = value
+        self.children = children
+    def evaluate(self, symbol_table):
+        dec, dec_type = symbol_table.get_value_recursive(self.value)
+        new_symbol_table = SymbolTable(symbol_table)
+        begin = 0
+        if dec_type == 'FUNCTION':
+            ret_type = dec.children[0].evaluate(symbol_table)
+            new_symbol_table.alloc(self.value, ret_type)
+            begin = 1
+        for i in range(begin, len(dec.children)-1):
+            dec.children[i].evaluate(new_symbol_table)
+            children_eval, child_eval_type = self.children[i-begin].evaluate(symbol_table)
+            arg_type = dec.children[i].children[1].evaluate(symbol_table)
+            if child_eval_type != arg_type:
+                raise Exception(f'Variable type {arg_type} is not {child_eval_type} !')
+            new_symbol_table.set_value(dec.children[i].children[0].value, children_eval)
+
+        dec.children[len(dec.children)-1].evaluate(new_symbol_table)
+
+        if dec_type == 'FUNCTION':
+            return new_symbol_table.get_value(self.value)
+        return
+

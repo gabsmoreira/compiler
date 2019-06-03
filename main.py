@@ -17,7 +17,7 @@ with open(file_name, 'rb') as file:
     # for i in range(100):
     #     print(tokens.actual.type)
     #     tokens.select_next()
-    symbol_table = SymbolTable()
+    symbol_table = SymbolTable(None)
     a = Parser.run(prepro)
     a.evaluate(symbol_table)
 

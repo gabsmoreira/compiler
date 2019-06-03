@@ -4,14 +4,38 @@ from Node import *
 class Parser:
 
     def parse_program():
+        funcs_or_subs = []
+
+        while Parser.tokens.actual.type != 'EOF':
+            if Parser.tokens.actual.type == 'SUB':
+                sub_dec = Parser.parse_sub_dec()
+                funcs_or_subs.append(sub_dec)
+
+            elif Parser.tokens.actual.type == 'FUNCTION':
+                func_dec = Parser.parse_func_dec()
+                funcs_or_subs.append(func_dec)
+
+            elif Parser.tokens.actual.type == 'BL':
+                Parser.tokens.line +=1
+                Parser.tokens.select_next()
+
+            else:
+                raise Exception(f'Expected FUNC or SUB in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+
+        call_main = FunCall('main',[])
+        funcs_or_subs.append(call_main)
+                
+        return Statements('X', funcs_or_subs)
+
+    def parse_sub_dec():
         if Parser.tokens.actual.type != 'SUB':
             raise Exception(f'Expected SUB in line {Parser.tokens.line} {Parser.tokens.actual.value}')
         
         Parser.tokens.select_next()
 
-        if Parser.tokens.actual.type != 'MAIN':
-            raise Exception(f'Expected MAIN in line {Parser.tokens.line} {Parser.tokens.actual.value}')
-        
+        if Parser.tokens.actual.type != 'VAR':
+            raise Exception(f'Expected identifier in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        sub_name = Parser.tokens.actual.value
         Parser.tokens.select_next()
 
         if Parser.tokens.actual.type != 'OPENPAR':
@@ -19,17 +43,41 @@ class Parser:
         
         Parser.tokens.select_next()
 
-        if Parser.tokens.actual.type != 'CLOSEPAR':
-            raise Exception(f'Expected ) in line {Parser.tokens.line} {Parser.tokens.actual.value}')
-        
-        Parser.tokens.select_next()
+        var_decs = []
+        # print(Parser.tokens.actual.value)
+        while True: 
+            if Parser.tokens.actual.type == 'CLOSEPAR':
+                Parser.tokens.select_next()
+                break
+            
+            if Parser.tokens.actual.type != 'VAR':
+                raise Exception(f'Expected identifier in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+                
+            var_id = Id(Parser.tokens.actual.value, [])
+            Parser.tokens.select_next()
 
+            if Parser.tokens.actual.type != 'AS':
+                raise Exception(f'Expected AS in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+            Parser.tokens.select_next()
+
+            var_type = Parser.parse_type()
+            
+            var_decs.append(VarDec('value', [var_id, var_type]))
+
+            if Parser.tokens.actual.type == 'CLOSEPAR':
+                Parser.tokens.select_next()
+                break
+
+            elif Parser.tokens.actual.type == 'COMMA':
+                Parser.tokens.select_next()
+                continue
+            Exception(f'Expected , after argument in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+            
         if Parser.tokens.actual.type != 'BL':
-            raise Exception(f'Expected break line in line {Parser.tokens.line} {Parser.tokens.actual.value}')
-        
-        Parser.tokens.line +=1
-        Parser.tokens.select_next()
+            raise Exception(f'Expected BREAKLINE in line {Parser.tokens.line} {Parser.tokens.actual.value}')
 
+        Parser.tokens.select_next()
         statements = []
         while Parser.tokens.actual.type != 'END':
             statement = Parser.parse_statement()
@@ -46,8 +94,91 @@ class Parser:
             raise Exception(f'Expected SUB in line {Parser.tokens.line} {Parser.tokens.actual.value}')
         
         Parser.tokens.select_next()
+        statements = Statements('X', statements)
+        var_decs.append(statements)
+        return SubDec(sub_name, var_decs)
 
-        return Statements('X', statements) 
+
+    def parse_func_dec():
+        if Parser.tokens.actual.type != 'FUNCTION':
+            raise Exception(f'Expected FUNCTION in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'VAR':
+            raise Exception(f'Expected identifier in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        func_name = Parser.tokens.actual.value
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'OPENPAR':
+            raise Exception(f'Expected ( in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+
+        var_decs = []
+        while True: 
+            if Parser.tokens.actual.type == 'CLOSEPAR':
+                Parser.tokens.select_next()
+                break
+
+            if Parser.tokens.actual.type != 'VAR':
+                raise Exception(f'Expected identifier in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+
+            var_id = Id(Parser.tokens.actual.value, [])
+            Parser.tokens.select_next()
+
+            if Parser.tokens.actual.type != 'AS':
+                raise Exception(f'Expected AS in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+            Parser.tokens.select_next()
+
+            var_type = Parser.parse_type()
+            
+            var_decs.append(VarDec('value', [var_id, var_type]))
+
+            if Parser.tokens.actual.type == 'CLOSEPAR':
+                Parser.tokens.select_next()
+                break
+
+            elif Parser.tokens.actual.type == 'COMMA':
+                Parser.tokens.select_next()
+                continue
+            Exception(f'Expected , after argument in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        if Parser.tokens.actual.type != 'AS':
+            raise Exception(f'Expected AS in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+        var_type = Parser.parse_type()
+        var_decs.insert(0, var_type)
+
+
+        if Parser.tokens.actual.type != 'BL':
+            raise Exception(f'Expected BREAKLINE in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+
+        Parser.tokens.select_next()
+        statements = []
+        while Parser.tokens.actual.type != 'END':
+            statement = Parser.parse_statement()
+            statements.append(statement)
+            if Parser.tokens.actual.type == 'BL':
+                Parser.tokens.line +=1
+                Parser.tokens.select_next()
+            else:
+                raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+
+        if Parser.tokens.actual.type != 'FUNCTION':
+            raise Exception(f'Expected FUNCTION in line {Parser.tokens.line} {Parser.tokens.actual.value}')
+        
+        Parser.tokens.select_next()
+        statements = Statements('func', statements)
+        var_decs.append(statements)
+
+        return FuncDec(func_name, var_decs)
+
 
 
     def parse_type():
@@ -56,7 +187,7 @@ class Parser:
                 ret_val = Type('INT', [])
                 Parser.tokens.select_next()
                 return ret_val
-            ret_val = Type(Parser.tokens.actual.value, [])
+            ret_val = Type(Parser.tokens.actual.value.upper(), [])
             Parser.tokens.select_next()
             return ret_val
       
@@ -108,6 +239,32 @@ class Parser:
             var_type = Parser.parse_type()
             return VarDec('value', [var_id, var_type])
 
+        elif Parser.tokens.actual.type == 'CALL':
+            Parser.tokens.select_next()
+
+            if Parser.tokens.actual.type != 'VAR':
+                raise Exception(f'Expected identifier after CALL in line {Parser.tokens.line}')
+            identifier = Parser.tokens.actual.value
+            Parser.tokens.select_next()
+
+            if Parser.tokens.actual.type != 'OPENPAR':
+                raise Exception(f'Expected OPENPAR after CALL in line {Parser.tokens.line}')
+            Parser.tokens.select_next()
+
+            rel_express = []
+            one_arg = True
+            while Parser.tokens.actual.type != 'CLOSEPAR':
+                if one_arg == False:
+                    if Parser.tokens.actual.type != 'COMMA':
+                        raise Exception(f'Expected COMMA after CALL in line {Parser.tokens.line}')
+                    Parser.tokens.select_next()
+
+                rel_express.append(Parser.parse_rel_expression())
+
+                one_arg = False
+                        
+            Parser.tokens.select_next()
+            return FunCall(identifier, rel_express)
         
         elif Parser.tokens.actual.type == 'IF':
             children_if = []
@@ -132,7 +289,9 @@ class Parser:
                     Parser.tokens.select_next()
                 else:
                     raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
-
+            
+            # sera?
+            # Parser.tokens.select_next()
             children_if.append(Statements('statements', children_statements))
 
 
@@ -234,7 +393,21 @@ class Parser:
         elif Parser.tokens.actual.type == 'VAR':
             identifier = Id(Parser.tokens.actual.value, [])
             Parser.tokens.select_next()
-            return identifier
+            if Parser.tokens.actual.type != 'OPENPAR':
+                return identifier
+            else:
+                Parser.tokens.select_next()
+                rel_express = []
+                while Parser.tokens.actual.type != 'CLOSEPAR':
+                    rel_express.append(Parser.parse_rel_expression())
+                    if Parser.tokens.actual.type == 'COMMA':
+                        Parser.tokens.select_next()
+                        continue
+                    else:
+                        break
+                Parser.tokens.select_next()
+                return FunCall(identifier.value, rel_express)
+
 
         elif Parser.tokens.actual.value == '(':
             Parser.tokens.select_next()
