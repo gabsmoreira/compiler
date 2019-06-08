@@ -14,7 +14,6 @@ class BinOp(Node):
 
         if var_type1 != var_type2:
             raise Exception(f'Cannot perform {self.value} with {var_type1} and {var_type2}')
-
         if var_type1 == 'INT':
             if self.value == '+':
                 return self.left.evaluate(symbol_table)[0] + self.right.evaluate(symbol_table)[0], var_type1
@@ -25,11 +24,11 @@ class BinOp(Node):
             elif self.value == '/':
                 return self.left.evaluate(symbol_table)[0] // self.right.evaluate(symbol_table)[0], var_type1
             elif self.value == '>':
-                return self.left.evaluate(symbol_table)[0] > self.right.evaluate(symbol_table)[0], var_type1
+                return self.left.evaluate(symbol_table)[0] > self.right.evaluate(symbol_table)[0], 'BOOLEAN'
             elif self.value == '<':
-                return self.left.evaluate(symbol_table)[0] < self.right.evaluate(symbol_table)[0], var_type1
+                return self.left.evaluate(symbol_table)[0] < self.right.evaluate(symbol_table)[0],  'BOOLEAN'
             elif self.value == '=':
-                return self.left.evaluate(symbol_table)[0] == self.right.evaluate(symbol_table)[0], var_type1
+                return self.left.evaluate(symbol_table)[0] == self.right.evaluate(symbol_table)[0], 'BOOLEAN'
         
         elif var_type1 == 'BOOLEAN':
             if self.value == 'AND':
@@ -140,7 +139,10 @@ class If(Node):
         self.value = value
         self.children = children
     def evaluate(self, symbol_table):
-        if self.children[0].evaluate(symbol_table)[0] == True:
+        s = self.children[0].evaluate(symbol_table)
+        if s[1] != 'BOOLEAN':
+            raise Exception(f'Cannot evaluate IF node without a boolean value')
+        if s[0] == True:
             self.children[1].evaluate(symbol_table)
         else:
             if len(self.children) == 3:

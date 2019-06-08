@@ -1,30 +1,39 @@
-function fibonacci(n as integer) as integer
+Sub check(n as integer)
+    dim tres as integer
+    dim cinco as integer
     dim flag as boolean
-    flag = false
-    if n = 0 then
-        fibonacci = 1
-        flag = true
+    
+    tres = (n - (n / 3 * 3))
+    cinco = (n - (n / 5 * 5))
+    flag = True
+
+    if (tres = 0) and (cinco = 0) then
+        print 00001111
+        flag = False
     end if
 
-    if n = 1 then 
-        fibonacci = 1
-        flag = true
+    if (tres = 0) and (flag = True) then
+        print 0000
+        flag = False
     end if
 
-    if flag = false then
-        fibonacci = fibonacci(n-2) + fibonacci(n-1)
+    if (cinco = 0) and (flag = True) then
+        print 1111
     end if
+End Sub
 
-end function
+Sub fizzBuzz()
+    ' adaptado da sabrina
+    Dim n as integer
 
-sub countdown(n as integer)
-    if n>0 then
-        print n
-        call countdown(n-1)
-    end if
-end sub
+    n = input
 
-sub main()
-    ' call countdown(5)
-    print fibonacci(5)
+    while n > 0
+        Call check(n)
+        n = n - 1     
+    wend
+End Sub
+
+Sub main()
+    Call fizzBuzz()
 end sub

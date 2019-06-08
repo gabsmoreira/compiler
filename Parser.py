@@ -271,9 +271,11 @@ class Parser:
             Parser.tokens.select_next()
             rel_expression = Parser.parse_rel_expression()
             children_if.append(rel_expression)
+
             if Parser.tokens.actual.type != 'THEN':
-                raise Exception(f'Expected THEN inside IF, instead got {Parser.tokens.actual.value}')
+                raise Exception(f'Expected THEN inside IF, instead got {Parser.tokens.actual.type}')
             Parser.tokens.select_next()
+
             if Parser.tokens.actual.type != 'BL':
                 raise Exception(f'Expected break line {Parser.tokens.line} {Parser.tokens.actual.value}')
 
@@ -332,7 +334,7 @@ class Parser:
 
     def parse_term():
         result = Parser.parse_factor()
-        while Parser.tokens.actual.value in ['*', '/']:
+        while Parser.tokens.actual.type in ['MULT', 'DIV', 'AND']:
             if Parser.tokens.actual.value == '*':
                 Parser.tokens.select_next()
                 new_term = Parser.parse_factor()
@@ -342,6 +344,11 @@ class Parser:
                 Parser.tokens.select_next()
                 new_term = Parser.parse_factor()
                 result = BinOp('/', [result, new_term])
+            
+            elif Parser.tokens.actual.type == 'AND':
+                Parser.tokens.select_next()
+                new_term = Parser.parse_factor()
+                result = BinOp('AND', [result, new_term])
         return result
     
     def parse_rel_expression():
@@ -365,7 +372,7 @@ class Parser:
 
     def parse_expression():
         result = Parser.parse_term()
-        while Parser.tokens.actual.value in ['+', '-']:
+        while Parser.tokens.actual.type in ['PLUS', 'MINUS', 'OR']:
             if Parser.tokens.actual.value == '+':
                 Parser.tokens.select_next()
                 new_term = Parser.parse_term()
@@ -375,6 +382,11 @@ class Parser:
                 Parser.tokens.select_next()
                 new_term = Parser.parse_term()
                 result = BinOp('-', [result, new_term])
+
+            elif Parser.tokens.actual.value == 'OR':
+                Parser.tokens.select_next()
+                new_term = Parser.parse_term()
+                result = BinOp('OR', [result, new_term])
         return result
     
     def parse_factor():

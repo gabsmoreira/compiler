@@ -1,4 +1,4 @@
-RESERVED = ['PRINT', 'BEGIN', 'END', 'WHILE', 'IF', 'WEND', 'THEN', 'ELSE', 'INPUT', 'DIM','INTEGER', 'BOOLEAN', 'AS', 'SUB', 'TRUE', 'FALSE', 'FUNCTION', 'CALL']
+RESERVED = ['PRINT', 'BEGIN', 'END', 'WHILE', 'IF', 'WEND', 'THEN', 'ELSE', 'INPUT', 'DIM','INTEGER', 'BOOLEAN', 'AS', 'SUB', 'TRUE', 'FALSE', 'FUNCTION', 'CALL', 'AND', 'OR']
 
 class Token:
     def __init__(self, token):
@@ -8,8 +8,14 @@ class Token:
         self.type = self.define_type(token)
 
     def define_type(self, token):
-        if token in self.OPS:
-            return 'OP'
+        if token == '/':
+            return 'DIV'
+        elif token == '*':
+            return 'MULT'
+        if token == '+':
+            return 'PLUS'
+        elif token == '-':
+            return 'MINUS'
         elif token.isdigit():
             return 'INT'
         elif token == ',':
